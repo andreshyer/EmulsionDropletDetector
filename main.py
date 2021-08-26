@@ -34,8 +34,8 @@ class FileSelector(Screen):
             file_path = file_path[0]
             imread(file_path)
             if imread(file_path) is not None:
-                self.manager.screens[1].ids.original_image.source = file_path
-                self.manager.screens[1].ids.file_name.text = file_path
+                self.parent.file_path = Path(file_path)
+                self.manager.screens[1].ids.file_name.text = self.parent.file_path.name
                 self.parent.transition.direction = 'left'
                 self.parent.current = "loading_screen"
             else:
@@ -81,6 +81,11 @@ class MainWindow(Screen, BoxLayout, GridLayout, Widget):
 
     # Bottom Buttons #
 
+    def release_next_unmarked(self):
+        self.parent.circle_detector.next_unmarked(forward=True)
+        self.check_toggle_buttons()
+        self.load_images()
+
     def release_next(self):
         self.parent.circle_detector.detect_next_circle(forward=True)
         self.check_toggle_buttons()
@@ -88,6 +93,11 @@ class MainWindow(Screen, BoxLayout, GridLayout, Widget):
 
     def release_prev(self):
         self.parent.circle_detector.detect_next_circle(forward=False)
+        self.check_toggle_buttons()
+        self.load_images()
+
+    def release_prev_unmarked(self):
+        self.parent.circle_detector.next_unmarked(forward=False)
         self.check_toggle_buttons()
         self.load_images()
 
@@ -148,8 +158,7 @@ class LoadingScreen(Screen):
     def _load_image(self):
 
         self._loading_bar()
-        file_path = self.manager.screens[1].ids.original_image.source
-        self.parent.circle_detector = Detector(file_path)
+        self.parent.circle_detector = Detector(self.parent.file_path)
 
         if self.parent.circle_detector.has_circles:
             self.parent.transition.direction = 'left'
@@ -195,6 +204,7 @@ class EmulsionBubbleDetectorApp(App):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.circle_detector = None
+        self.file_path = None
 
     def build(self):
         self.icon = 'AppData/vcu_png.png'

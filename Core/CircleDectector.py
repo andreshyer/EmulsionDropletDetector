@@ -1,5 +1,6 @@
 from pathlib import Path
-from os import listdir
+from os import listdir, mkdir
+from os.path import exists
 from hashlib import sha256
 from json import load, dump
 
@@ -12,8 +13,8 @@ class Detector:
 
     def __init__(self, file_path):
         # Define original image
-        self.file_path = Path(file_path)
-        self.original_image = cv2.imread(file_path, cv2.IMREAD_COLOR)
+        self.file_path = file_path
+        self.original_image = cv2.imread(str(file_path), cv2.IMREAD_COLOR)
 
         # Transform image into grey scale if not already done
         self.machine_image = cv2.GaussianBlur(self.original_image, (0, 0), cv2.BORDER_DEFAULT)
@@ -60,7 +61,7 @@ class Detector:
             working_circle = self.csv_data.iloc[[self.index]].to_dict('records')[0]
             x, y, r = working_circle['x'], working_circle['y'], working_circle['r']
 
-            self._get_current_image(x, y, r)
+            self._get_current_image()
             self._get_detected_image(x, y, r)
             self._get_zoomed_image(x, y, r)
 
@@ -116,6 +117,9 @@ class Detector:
         with open(self.file_path, "rb") as f:
             file_sha256 = sha256(f.read()).hexdigest()
 
+        if not exists(Path(__file__).parent.parent / f"AppData/data"):
+            mkdir(Path(__file__).parent.parent / f"AppData/data")
+
         self.csv_data_path = Path(__file__).parent.parent / f"AppData/data/{file_sha256}.csv"
         if self.csv_data_path.name in listdir(Path(__file__).parent.parent / "AppData/data"):
             df = read_csv(self.csv_data_path)
@@ -153,18 +157,15 @@ class Detector:
             for index, row in marked_circles.iterrows():
                 cv2.circle(self.current_image, (row['x'], row['y']), row['r'], (255, 0, 0), 2)
 
-    def _get_current_image(self, x, y, r):
-        current_image = cv2.circle(self.current_image.copy(), (x, y), r, (0, 0, 255), 2)
-        cv2.imwrite(str(Path(__file__).parent.parent / "AppData/meta/current.png"), current_image)
+    def _get_current_image(self):
+        cv2.imwrite(str(Path(__file__).parent.parent / "AppData/meta/current.png"), self.current_image)
 
     def _get_detected_image(self, x, y, r):
-
         # Draw circle around orginial image and save it
         detected_image = cv2.circle(self.original_image.copy(), (x, y), r, (0, 0, 255), 2)
         cv2.imwrite(str(Path(__file__).parent.parent / "AppData/meta/detected.png"), detected_image)
 
     def _get_zoomed_image(self, x, y, r):
-
         # Define coordinates around circle
         max_y = self.original_image.shape[0]
         max_x = self.original_image.shape[1]
@@ -176,3 +177,29 @@ class Detector:
         # Crop then save the image
         zoomed_image = self.original_image[y_bottom:y_top, x_left:x_right]
         cv2.imwrite(str(Path(__file__).parent.parent / "AppData/meta/zoomed.png"), zoomed_image)
+
+    def _check_if_marked(self, index):
+        if self.csv_data.at[index, 'is_circle'] == 'unmarked':
+            return True
+        return False
+
+    def next_unmarked(self, forward=True):
+
+        starting_index = self.index
+
+        while True:
+            if forward:
+                self.index += 1
+                if self.index >= self.num_of_circles:
+                    self.index = 0
+            if not forward:
+                self.index -= 1
+                if self.index <= -1:
+                    self.index = self.num_of_circles - 1
+            if self.index == starting_index:
+                break
+            if self._check_if_marked(self.index):
+                break
+
+        self.detect_next_circle(forward=False)
+        self.detect_next_circle(forward=True)

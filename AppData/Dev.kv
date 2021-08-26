@@ -108,30 +108,16 @@ WindowManager:
             color: 0, 0, 0, 1
             text: "_ of _ Detected Circles"
 
-        GridLayout:
-            rows: 2
+        BoxLayout:
             spacing: 5
             padding: 20, 20, 20, 20
             GridLayout:
-                rows: 2
-                Label:
-                    color: 0, 0, 0, 1
-                    size_hint_y: 0.1
-                    text: "Original"
-                Image:
-                    id: original_image
-                    source: ""
-            GridLayout:
-                rows: 2
-                Label:
-                    color: 0, 0, 0, 1
-                    size_hint_y: 0.1
-                    text: "Current"
-                Image:
-                    id: current_image
-                    source: "AppData/meta/current.png"
-            GridLayout:
-                rows: 2
+                rows: 3
+                canvas.before:
+                    Color:
+                        rgba: 0, 0, 0, 1
+                    Line:
+                        width: 1
                 Label:
                     color: 0, 0, 0, 1
                     size_hint_y: 0.1
@@ -139,38 +125,67 @@ WindowManager:
                 Image:
                     id: detected_image
                     source: "AppData/meta/detected.png"
-            GridLayout:
-                rows: 2
-                Label:
-                    color: 0, 0, 0, 1
+                BoxLayout:
                     size_hint_y: 0.1
-                    text: "Zoomed"
-                Image:
-                    id: zoomed_image
-                    source: "AppData/meta/zoomed.png"
-        BoxLayout:
-            size_hint_y: 0.2
-            padding: 20, 20, 20, 20
-            Button:
-                text: "Prev"
-                on_release: root.release_prev()
-            Button:
-                text: "Next"
-                on_release: root.release_next()
-            Label:
-                text: ""
-            ToggleButton:
-                id: yes_button
-                group: "yes_no_buttons"
-                text: "Yes"
-                background_color: (49/255), (246/255), (123/255), 1
-                on_press: root.press_yes()
-            ToggleButton:
-                id: no_button
-                group: "yes_no_buttons"
-                text: "No"
-                background_color: (244/255), (31/255), (131/255), 1
-                on_press: root.press_no()
+                    Button:
+                        text: "<<"
+                        on_release: root.release_prev_unmarked()
+                    Button:
+                        text: "<"
+                        on_release: root.release_prev()
+                    Button:
+                        text: ">"
+                        on_release: root.release_next()
+                    Button:
+                        text: ">>"
+                        on_release: root.release_next_unmarked()
+                    ToggleButton:
+                        id: yes_button
+                        group: "yes_no_buttons"
+                        text: "Yes"
+                        background_color: (49/255), (246/255), (123/255), 1
+                        on_press: root.press_yes()
+                    ToggleButton:
+                        id: no_button
+                        group: "yes_no_buttons"
+                        text: "No"
+                        background_color: (244/255), (31/255), (131/255), 1
+                        on_press: root.press_no()
+            GridLayout:
+                size_hint_x: 0.66
+                rows: 2
+                GridLayout:
+                    rows: 2
+                    padding: 0, 0, 0, 5
+                    canvas.before:
+                        Color:
+                            rgba: 0, 0, 0, 1
+                        Line:
+                            width: 1
+                            rectangle: self.x, self.y, self.width, self.height
+                    Label:
+                        color: 0, 0, 0, 1
+                        size_hint_y: 0.1
+                        text: "Current"
+                    Image:
+                        id: current_image
+                        source: "AppData/meta/current.png"
+                GridLayout:
+                    rows: 2
+                    padding: 0, 0, 0, 5
+                    canvas.before:
+                        Color:
+                            rgba: 0, 0, 0, 1
+                        Line:
+                            width: 1
+                            rectangle: self.x, self.y, self.width, self.height
+                    Label:
+                        color: 0, 0, 0, 1
+                        size_hint_y: 0.1
+                        text: "Zoomed"
+                    Image:
+                        id: zoomed_image
+                        source: "AppData/meta/zoomed.png"
 
 <FileExporter>:
     name: "file_exporter"
