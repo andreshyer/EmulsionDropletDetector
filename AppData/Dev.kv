@@ -1,0 +1,205 @@
+#:kivy 2.0.0
+
+WindowManager:
+    FileSelector:
+    MainWindow:
+    LoadingScreen:
+    FileExporter:
+
+<FileSelector>:
+    name: "file_selector"
+
+    BoxLayout:
+        size: root.size
+        pos: root.pos
+        orientation: "vertical"
+
+        Label:
+            id: dir_check
+            size_hint_y: 0.05
+            text: "Select Picture File to Identify Circles"
+            font_size: 15
+
+        FileChooserListView:
+            id: file_chooser
+
+        BoxLayout:
+            size_hint_y: None
+            height: 30
+            Button:
+                text: "Delete All Data"
+                background_color: 1, 0, 0, 1
+                on_release: root.delete_all_data()
+
+            Button:
+                text: "Load"
+                on_release:
+                    root.load(file_chooser.selection)
+
+<LoadingScreen>:
+    name: "loading_screen"
+    on_enter: root.load_image()
+
+<MainWindow>:
+    name: "main_window"
+    on_enter: root.load_images()
+
+    GridLayout:
+        canvas.before:
+            Color:
+                rgba: 1, 1, 1, 1
+            Rectangle:
+                size: self.size
+                pos: self.pos
+        rows: 4
+
+        BoxLayout:
+            size_hint_y: 0.1
+            padding: 5, 5, 5, 5
+            spacing: 10
+
+            Button:
+                size_hint_x: 0.05
+                background_normal: ""
+                on_press: root.press_return()
+                on_release:
+                    root.release_return()
+                    app.root.transition.direction = 'right'
+                    app.root.current = "file_selector"
+                Image:
+                    id: return_image
+                    size: (min(root.size)*0.07, min(root.size)*0.07)
+                    source: "AppData/icons/return_default.jpeg"
+                    center_x: self.parent.center_x
+                    center_y: self.parent.center_y
+
+            Button:
+                size_hint_x: 0.05
+                background_normal: ""
+                on_press: root.press_clear()
+                on_release: root.release_clear()
+                Image:
+                    id: clear_image
+                    size: (min(root.size)*0.07, min(root.size)*0.07)
+                    source: "AppData/icons/clear_default.jpeg"
+                    center_x: self.parent.center_x
+                    center_y: self.parent.center_y
+
+            Button:
+                size_hint_x: 0.05
+                background_normal: ""
+                on_press: root.press_export()
+                on_release: root.release_export()
+                Image:
+                    id: export_image
+                    size: (min(root.size)*0.07, min(root.size)*0.07)
+                    source: "AppData/icons/export_default.jpeg"
+                    center_x: self.parent.center_x
+                    center_y: self.parent.center_y
+
+            Label:
+                id: file_name
+                color: 0, 0, 0, 1
+                text: "File Name"
+
+        Label:
+            id: circle_index
+            size_hint_y: 0.1
+            color: 0, 0, 0, 1
+            text: "_ of _ Detected Circles"
+
+        GridLayout:
+            rows: 2
+            spacing: 5
+            padding: 20, 20, 20, 20
+            GridLayout:
+                rows: 2
+                Label:
+                    color: 0, 0, 0, 1
+                    size_hint_y: 0.1
+                    text: "Original"
+                Image:
+                    id: original_image
+                    source: ""
+            GridLayout:
+                rows: 2
+                Label:
+                    color: 0, 0, 0, 1
+                    size_hint_y: 0.1
+                    text: "Current"
+                Image:
+                    id: current_image
+                    source: "AppData/meta/current.png"
+            GridLayout:
+                rows: 2
+                Label:
+                    color: 0, 0, 0, 1
+                    size_hint_y: 0.1
+                    text: "Detected"
+                Image:
+                    id: detected_image
+                    source: "AppData/meta/detected.png"
+            GridLayout:
+                rows: 2
+                Label:
+                    color: 0, 0, 0, 1
+                    size_hint_y: 0.1
+                    text: "Zoomed"
+                Image:
+                    id: zoomed_image
+                    source: "AppData/meta/zoomed.png"
+        BoxLayout:
+            size_hint_y: 0.2
+            padding: 20, 20, 20, 20
+            Button:
+                text: "Prev"
+                on_release: root.release_prev()
+            Button:
+                text: "Next"
+                on_release: root.release_next()
+            Label:
+                text: ""
+            ToggleButton:
+                id: yes_button
+                group: "yes_no_buttons"
+                text: "Yes"
+                background_color: (49/255), (246/255), (123/255), 1
+                on_press: root.press_yes()
+            ToggleButton:
+                id: no_button
+                group: "yes_no_buttons"
+                text: "No"
+                background_color: (244/255), (31/255), (131/255), 1
+                on_press: root.press_no()
+
+<FileExporter>:
+    name: "file_exporter"
+    on_enter: root.fetch_file_name()
+
+    BoxLayout:
+        size: root.size
+        pos: root.pos
+        orientation: "vertical"
+        padding: 20, 20, 20, 20
+
+        TextInput:
+            id: file_path
+            size_hint_y: 0.05
+            text: ""
+            font_size: 15
+
+        FileChooserListView:
+            id: file_exporter
+
+        BoxLayout:
+            size_hint_y: None
+            height: 30
+            Button:
+                text: "Back"
+                on_release: root.release_back()
+
+            Button:
+                text: "Save"
+                background_color: 0, 0, 1, 1
+                on_release:
+                    root.export_data(file_exporter.path)
