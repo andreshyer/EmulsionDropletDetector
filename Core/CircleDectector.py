@@ -7,6 +7,14 @@ from json import load, dump
 import cv2
 from numpy import uint16, around
 from pandas import DataFrame, read_csv
+import re
+
+conversion = {('3p2', 3.2): 250.0 / 57.0,
+              ('6p3', 6.3): 250.0 / 112.0,
+              ('12', '12p0', 12): 200.0 / 173.0,
+              ('3p2-2'): 2.95,
+              ('6p3-2'): 1.51,
+              ('12p0-2', '12-2'): 0.78}
 
 
 class Detector:
@@ -136,7 +144,17 @@ class Detector:
         return df
 
     def _detect_circles(self):
-
+        # ==============================================================================================================
+        # make the r(um) equal to the r(pix) initially using a conversion factor = 1
+        conv_coef = 1
+        # regex search the path name to find the magnification information
+        file_re = re.search('(fb(\d)_(\d+)I_([A-Z]+)_([A-Z]+)_([0-9p]{3})_([A-Z]+)_([0-9p]{3})*c*_([0-9p]{1,4})v_*\d*_([0-9a-zA-Z\-]{1,6})_*\d*)', str(self.file_path))
+        if file_re:  # if the file name matches the regex search
+            mag = file_re.group(10)  # get the magnification value
+            for key in conversion.keys():  # go through the keys to check what conversion factor to use
+                if mag in key:
+                    conv_coef = conversion[key]  # define the multiplication factor from a defined dictionary of values
+        # ==============================================================================================================
         circles = cv2.HoughCircles(self.machine_image, cv2.HOUGH_GRADIENT, 1, 20,
                                    param1=90, param2=40, minRadius=0, maxRadius=0)
         if circles is not None:
@@ -144,7 +162,7 @@ class Detector:
             circle_data = []
             for i in circles[0, :]:
                 x, y, r = i[0], i[1], i[2]
-                circle_data.append({'x': x, 'y': y, 'r': r, 'is_circle': 'unmarked'})
+                circle_data.append({'x': x, 'y': y, 'r': r, 'is_circle': 'unmarked', 'r(um)': conv_coef * r})
             self.csv_data = DataFrame(circle_data)
             self.csv_data.to_csv(self.csv_data_path, index=False)
 
