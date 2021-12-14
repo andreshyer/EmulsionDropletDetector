@@ -45,7 +45,7 @@ class Detector:
             self.current_image = self.original_image.copy()
             marked_circles = self.csv_data.loc[self.csv_data['is_circle'] == 'yes']
             for index, row in marked_circles.iterrows():
-                cv2.circle(self.current_image, (row['x'], row['y']), row['r'], (255, 0, 0), 2)
+                cv2.circle(self.current_image, (row['x'], row['y']), row['r (pixel)'], (255, 0, 0), 2)
 
             # Init first found of pictures
             self.num_of_circles = len(self.csv_data)
@@ -162,7 +162,7 @@ class Detector:
             circle_data = []
             for i in circles[0, :]:
                 x, y, r = i[0], i[1], i[2]
-                circle_data.append({'x': x, 'y': y, 'r': r, 'is_circle': 'unmarked', 'r(um)': conv_coef * r})
+                circle_data.append({'x': x, 'y': y, 'r (pixel)': r, 'is_circle': 'unmarked', 'r (um)': conv_coef * r})
             self.csv_data = DataFrame(circle_data)
             self.csv_data.to_csv(self.csv_data_path, index=False)
 
@@ -173,7 +173,7 @@ class Detector:
             self.current_image = self.original_image.copy()
             marked_circles = self.csv_data.loc[self.csv_data['is_circle'] == 'yes']
             for index, row in marked_circles.iterrows():
-                cv2.circle(self.current_image, (row['x'], row['y']), row['r'], (255, 0, 0), 2)
+                cv2.circle(self.current_image, (row['x'], row['y']), row['r (pixel)'], (255, 0, 0), 2)
 
     def _get_current_image(self):
         cv2.imwrite(str(Path(__file__).parent.parent / "AppData/meta/current.png"), self.current_image)
