@@ -9,6 +9,7 @@ from numpy import uint16, around
 from pandas import DataFrame, read_csv
 import re
 
+
 conversion = {('3p2', 3.2): 250.0 / 57.0,
               ('6p3', 6.3): 250.0 / 112.0,
               ('12', '12p0', 12): 200.0 / 173.0,
@@ -49,40 +50,46 @@ class Detector:
 
             # Init first found of pictures
             self.num_of_circles = len(self.csv_data)
-            self.detect_next_circle()
+            self.fetch_next_circle()
 
-    def detect_next_circle(self, forward=True):
+    def fetch_next_circle(self, forward=True):
 
-        df = self.csv_data.loc[self.csv_data['is_circle'] == 'unmarked']
-        if not df.empty:
+        # Update the index
+        if forward:
+            self.index += 1
+            if self.index >= self.num_of_circles:
+                self.index = 0
+        if not forward:
+            self.index -= 1
+            if self.index <= -1:
+                self.index = self.num_of_circles - 1
 
-            # Update the index
-            if forward:
-                self.index += 1
-                if self.index >= self.num_of_circles:
-                    self.index = 0
-            if not forward:
-                self.index -= 1
-                if self.index <= -1:
-                    self.index = self.num_of_circles - 1
+        working_circle = self.csv_data.iloc[[self.index]].to_dict('records')[0]
+        x, y, r = working_circle['x'], working_circle['y'], working_circle['r (pixel)']
 
-            working_circle = self.csv_data.iloc[[self.index]].to_dict('records')[0]
-            x, y, r = working_circle['x'], working_circle['y'], working_circle['r']
+        self._get_current_image()
+        self._get_detected_image(x, y, r)
+        self._get_zoomed_image(x, y, r)
 
-            self._get_current_image()
-            self._get_detected_image(x, y, r)
-            self._get_zoomed_image(x, y, r)
+        with open(self.index_pointer_file, 'w') as f:
+            dump(self.index, f)
 
-            with open(self.index_pointer_file, 'w') as f:
-                dump(self.index, f)
+        self._update_status()
 
-            self._update_status()
+        # Return status of buttons
+        status = working_circle['is_circle']
+        status_keys = {
+            'yes': ('down', 'normal'),
+            'no': ('normal', 'down'),
+            'unmarked': ('normal', 'normal')
+        }
+        return status_keys[status]
 
     def update_choice(self, choice):
 
         if choice == 'yes':
             working_circle = self.csv_data.iloc[[self.index]].to_dict('records')[0]
-            x, y, r = working_circle['x'], working_circle['y'], working_circle['r']
+            x, y, r = working_circle['x'], working_circle['y'], working_circle['r (pixel)']
 
             self.csv_data.at[self.index, 'is_circle'] = 'yes'
             self._update_current_image(x, y, r, add_circle=True)
@@ -104,12 +111,17 @@ class Detector:
         self.csv_data.to_csv(self.csv_data_path, index=False)
         self._update_status()
 
+        remaining_data = self.csv_data.loc[self.csv_data['is_circle'] == 'unmarked']
+        if remaining_data.empty:
+            return True
+        return False
+
     def clear_all_data(self):
         self.csv_data['is_circle'] = 'unmarked'
         self.csv_data.to_csv(self.csv_data_path, index=False)
         self._update_current_image(add_circle=False)
         self.index = -1
-        self.detect_next_circle(forward=True)
+        self.fetch_next_circle(forward=True)
         self._update_status()
 
     def _update_status(self):
@@ -132,7 +144,7 @@ class Detector:
         if self.csv_data_path.name in listdir(Path(__file__).parent.parent / "AppData/data"):
             df = read_csv(self.csv_data_path)
         else:
-            df = DataFrame(columns=['x', 'y', 'r', 'is_circle'])
+            df = DataFrame(columns=['x', 'y', 'r (pixel)', 'is_circle'])
 
         self.index_pointer_file = Path(__file__).parent.parent / f"AppData/data/{file_sha256}.json"
         if self.index_pointer_file.name in listdir(Path(__file__).parent.parent / "AppData/data"):
@@ -219,5 +231,5 @@ class Detector:
             if self._check_if_marked(self.index):
                 break
 
-        self.detect_next_circle(forward=False)
-        self.detect_next_circle(forward=True)
+        self.fetch_next_circle(forward=False)
+        return self.fetch_next_circle(forward=True)

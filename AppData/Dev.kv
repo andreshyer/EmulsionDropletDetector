@@ -22,6 +22,7 @@ WindowManager:
 
         FileChooserListView:
             id: file_chooser
+            path: root.get_home_path()
 
         BoxLayout:
             size_hint_y: None
@@ -42,7 +43,7 @@ WindowManager:
 
 <MainWindow>:
     name: "main_window"
-    on_enter: root.load_images()
+    on_enter: root.enter_main_window()
 
     GridLayout:
         canvas.before:
