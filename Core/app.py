@@ -74,12 +74,12 @@ class MainWindow(Screen, BoxLayout, GridLayout, Widget):
             sha256 = self.parent.circle_detector.csv_data_path.stem
             analyzed_file_hashes_path = Path(__file__).parent.parent / "analyzed_file_hashes.txt"
             with open(analyzed_file_hashes_path, "a") as f:
-                f.write(sha256)
+                f.write(f"\n{sha256}")
 
-            file_name = self.parent.circle_detector.file_path.name
+            file_name = self.parent.circle_detector.file_path.stem
             analyzed_file_names_path = Path(__file__).parent.parent / "analyzed_file_names.txt"
             with open(analyzed_file_names_path, "a") as f:
-                f.write(file_name)
+                f.write(f"\n{file_name}")
 
             return "Completed"
 
@@ -93,7 +93,7 @@ class MainWindow(Screen, BoxLayout, GridLayout, Widget):
                 self.parent.analyzed_file_hashes.remove(sha256)
                 f.writelines(list(self.parent.analyzed_file_hashes))
 
-        file_name = self.parent.circle_detector.file_path.name
+        file_name = self.parent.circle_detector.file_path.stem
         analyzed_file_names_path = Path(__file__).parent.parent / "analyzed_file_names.txt"
         if file_name in self.parent.analyzed_file_names:
             with open(analyzed_file_names_path, "w") as f:
@@ -109,19 +109,20 @@ class MainWindow(Screen, BoxLayout, GridLayout, Widget):
         sha256 = self.parent.circle_detector.csv_data_path.stem
         analyzed_file_hashes_path = Path(__file__).parent.parent / "analyzed_file_hashes.txt"
         with open(analyzed_file_hashes_path, "r") as f:
-            self.parent.analyzed_file_hashes = f.readlines()
+            self.parent.analyzed_file_hashes = f.read().splitlines()
 
-        file_name = self.parent.circle_detector.file_path.name
+        file_name = self.parent.circle_detector.file_path.stem
         analyzed_file_names_path = Path(__file__).parent.parent / "analyzed_file_names.txt"
         with open(analyzed_file_names_path, "r") as f:
-            self.parent.analyzed_file_names = f.readlines()
+            self.parent.analyzed_file_names = f.read().splitlines()
 
+        self.parent.complete_status_str = "Not Complete"
         if sha256 in self.parent.analyzed_file_hashes:
             self.parent.complete_status_str = "Completed"
-        elif file_name in self.parent.analyzed_file_names:
+        if file_name in self.parent.analyzed_file_names:
             self.parent.complete_status_str = "Completed"
-        else:
-            self.parent.complete_status_str = "Not Complete"
+
+        self.ids.yes_button.state, self.ids.no_button.state = "normal", "normal"
 
         self.load_images()
 
@@ -265,6 +266,10 @@ class EmulsionBubbleDetectorApp(App):
         data_path = Path(__file__).parent.parent / "AppData/data"
         if not exists(data_path):
             mkdir(data_path)
+
+        meta_path = Path(__file__).parent.parent / "AppData/meta"
+        if not exists(meta_path):
+            mkdir(meta_path)
 
     def build(self):
         self.icon = 'AppData/vcu_png.png'
