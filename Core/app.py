@@ -1,4 +1,4 @@
-from shutil import rmtree
+from shutil import rmtree, copy
 from pathlib import Path
 import threading
 from os import mkdir
@@ -270,6 +270,12 @@ class EmulsionBubbleDetectorApp(App):
         meta_path = Path(__file__).parent.parent / "AppData/meta"
         if not exists(meta_path):
             mkdir(meta_path)
+
+            # TODO update this to create a new image from memory, will cause issues later
+            example_image = Path(__file__).parent.parent / "Example/sun.png"
+            copy(example_image, meta_path / "zoomed.png")
+            copy(example_image, meta_path / "current.png")
+            copy(example_image, meta_path / "detected.png")
 
     def build(self):
         self.icon = 'AppData/vcu_png.png'
