@@ -49,6 +49,11 @@ class FileSelector(Screen):
         data_dir_path = Path(__file__).parent.parent / "AppData/data"
         rmtree(data_dir_path)
         mkdir(data_dir_path)
+
+        hashes_file_path = Path(__file__).parent.parent / "analyzed_file_hashes.txt"
+        with open(hashes_file_path, "w") as f:
+            pass
+
         self.ids.dir_check.text = "All Cached Data has been deleted"
         Clock.schedule_once(self._show_default_heading, 2)
 
@@ -76,29 +81,23 @@ class MainWindow(Screen, BoxLayout, GridLayout, Widget):
             with open(analyzed_file_hashes_path, "a") as f:
                 f.write(f"\n{sha256}")
 
-            file_name = self.parent.circle_detector.file_path.stem
-            analyzed_file_names_path = Path(__file__).parent.parent / "analyzed_file_names.txt"
-            with open(analyzed_file_names_path, "a") as f:
-                f.write(f"\n{file_name}")
+            self.parent.analyzed_file_hashes.add(sha256)
 
             return "Completed"
 
         return "Not Complete"
 
     def remove_complete_status(self):
+
         sha256 = self.parent.circle_detector.csv_data_path.stem
         analyzed_file_hashes_path = Path(__file__).parent.parent / "analyzed_file_hashes.txt"
         if sha256 in self.parent.analyzed_file_hashes:
             with open(analyzed_file_hashes_path, "w") as f:
                 self.parent.analyzed_file_hashes.remove(sha256)
-                f.writelines(list(self.parent.analyzed_file_hashes))
-
-        file_name = self.parent.circle_detector.file_path.stem
-        analyzed_file_names_path = Path(__file__).parent.parent / "analyzed_file_names.txt"
-        if file_name in self.parent.analyzed_file_names:
-            with open(analyzed_file_names_path, "w") as f:
-                self.parent.analyzed_file_names.remove(file_name)
-                f.writelines(list(self.parent.analyzed_file_names))
+                analyzed_file_hashes = [i + "\n" for i in self.parent.analyzed_file_hashes]
+                print(analyzed_file_hashes)
+                analyzed_file_hashes[-1] = analyzed_file_hashes[-1].strip()
+                f.writelines(analyzed_file_hashes)
 
         self.parent.complete_status_str = "Not Complete"
 
@@ -109,17 +108,10 @@ class MainWindow(Screen, BoxLayout, GridLayout, Widget):
         sha256 = self.parent.circle_detector.csv_data_path.stem
         analyzed_file_hashes_path = Path(__file__).parent.parent / "analyzed_file_hashes.txt"
         with open(analyzed_file_hashes_path, "r") as f:
-            self.parent.analyzed_file_hashes = f.read().splitlines()
-
-        file_name = self.parent.circle_detector.file_path.stem
-        analyzed_file_names_path = Path(__file__).parent.parent / "analyzed_file_names.txt"
-        with open(analyzed_file_names_path, "r") as f:
-            self.parent.analyzed_file_names = f.read().splitlines()
+            self.parent.analyzed_file_hashes = set(f.read().splitlines())
 
         self.parent.complete_status_str = "Not Complete"
         if sha256 in self.parent.analyzed_file_hashes:
-            self.parent.complete_status_str = "Completed"
-        if file_name in self.parent.analyzed_file_names:
             self.parent.complete_status_str = "Completed"
 
         self.ids.yes_button.state, self.ids.no_button.state = "normal", "normal"

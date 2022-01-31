@@ -77,18 +77,6 @@ WindowManager:
             Button:
                 size_hint_x: 0.05
                 background_normal: ""
-                on_press: root.press_clear()
-                on_release: root.release_clear()
-                Image:
-                    id: clear_image
-                    size: (min(root.size)*0.07, min(root.size)*0.07)
-                    source: "AppData/icons/clear_default.jpeg"
-                    center_x: self.parent.center_x
-                    center_y: self.parent.center_y
-
-            Button:
-                size_hint_x: 0.05
-                background_normal: ""
                 on_press: root.press_export()
                 on_release: root.release_export()
                 Image:
@@ -102,6 +90,18 @@ WindowManager:
                 id: file_name
                 color: 0, 0, 0, 1
                 text: "File Name"
+
+            Button:
+                size_hint_x: 0.05
+                background_normal: ""
+                on_press: root.press_clear()
+                on_release: root.release_clear()
+                Image:
+                    id: clear_image
+                    size: (min(root.size)*0.07, min(root.size)*0.07)
+                    source: "AppData/icons/clear_default.jpeg"
+                    center_x: self.parent.center_x
+                    center_y: self.parent.center_y
 
         Label:
             id: circle_index
