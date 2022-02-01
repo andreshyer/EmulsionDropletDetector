@@ -153,9 +153,7 @@ class Detector:
         self.index_pointer_file = Path(__file__).parent.parent / f"AppData/data/{file_sha256}.json"
         if self.index_pointer_file.name in listdir(Path(__file__).parent.parent / "AppData/data"):
             with open(self.index_pointer_file, 'r') as f:
-                print(self.index_pointer_file)
                 data = load(f)
-                print(data)
                 self.index = data['current_index'] - 1
         else:
             self.index = -1

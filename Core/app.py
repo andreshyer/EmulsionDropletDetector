@@ -78,8 +78,17 @@ class MainWindow(Screen, BoxLayout, GridLayout, Widget):
 
             sha256 = self.parent.circle_detector.csv_data_path.stem
             analyzed_file_hashes_path = Path(__file__).parent.parent / "analyzed_file_hashes.txt"
+
+            is_empty = False
+            with open(analyzed_file_hashes_path, "r") as f:
+                if not f.read().strip():
+                    is_empty = True
+
             with open(analyzed_file_hashes_path, "a") as f:
-                f.write(f"\n{sha256}")
+                if is_empty:
+                    f.write(sha256)
+                else:
+                    f.write(f"\n{sha256}")
 
             self.parent.analyzed_file_hashes.add(sha256)
 
@@ -95,9 +104,10 @@ class MainWindow(Screen, BoxLayout, GridLayout, Widget):
             with open(analyzed_file_hashes_path, "w") as f:
                 self.parent.analyzed_file_hashes.remove(sha256)
                 analyzed_file_hashes = [i + "\n" for i in self.parent.analyzed_file_hashes]
-                print(analyzed_file_hashes)
-                analyzed_file_hashes[-1] = analyzed_file_hashes[-1].strip()
-                f.writelines(analyzed_file_hashes)
+
+                if analyzed_file_hashes:
+                    analyzed_file_hashes[-1] = analyzed_file_hashes[-1].strip()
+                    f.writelines(analyzed_file_hashes)
 
         self.parent.complete_status_str = "Not Complete"
 
