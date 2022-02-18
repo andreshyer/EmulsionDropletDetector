@@ -3,8 +3,10 @@ from pathlib import Path
 import threading
 from os import mkdir
 from os.path import exists
+from hashlib import sha256
+from json import load
 
-from cv2 import imread
+from cv2 import imread, imwrite, circle
 from kivy import require
 from kivy.app import App
 from kivy.uix.gridlayout import GridLayout
@@ -36,7 +38,7 @@ class FileSelector(Screen):
                 self.parent.file_path = Path(file_path)
                 self.manager.screens[1].ids.file_name.text = self.parent.file_path.name
                 self.parent.transition.direction = 'left'
-                self.parent.current = "loading_screen"
+                self.parent.current = "prep_processing_screen"
             else:
                 self.ids.dir_check.text = "File Type is not Supported"
         if not file_path:
@@ -60,6 +62,85 @@ class FileSelector(Screen):
     @staticmethod
     def get_home_path():
         return str(Path.home())
+
+
+class PreProcessingScreen(Screen):
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def update_current_image(self):
+
+        # Get file hash
+        with open(self.parent.file_path, "rb") as f:
+            file_sha256 = sha256(f.read()).hexdigest()
+
+        # If json data exists for file, grab min and max radii
+        min_radius, max_radius = 0, 0
+        data_folder_path = Path(__file__).parent.parent / "AppData/data"
+        opened_files = list(set([file.stem for file in data_folder_path.iterdir()]))
+        if file_sha256 in opened_files:
+            with open(Path(__file__).parent.parent / f"AppData/data/{file_sha256}.json", "r") as f:
+                data = load(f)
+                if "min_radius" in data.keys() and "max_radius" in data.keys():
+                    min_radius, max_radius = data["min_radius"], data["max_radius"]
+
+        # Check if image has been analyzed
+        complete_status = "(Not Complete)"
+        analyzed_file_hashes_path = Path(__file__).parent.parent / "analyzed_file_hashes.txt"
+        with open(analyzed_file_hashes_path, "r") as f:
+            analyzed_file_hashes = set(f.read().splitlines())
+        if file_sha256 in analyzed_file_hashes:
+            complete_status = "(Complete)"
+
+        self.ids.file_name.text = f"{self.parent.file_path.name} {complete_status}"
+        self.ids.min_radius.text = str(min_radius)
+        self.ids.max_radius.text = str(max_radius)
+
+        base_image = imread(str(self.parent.file_path))
+        middle_pixel_map = (int(base_image.shape[1] / 2), int(base_image.shape[0] / 2))
+        imwrite(str(Path(__file__).parent.parent / "AppData/meta/base_image.png"), base_image)
+
+        base_image = imread(str(self.parent.file_path))
+        image_10 = circle(base_image, middle_pixel_map, 10, (255, 0, 0), 2)
+        imwrite(str(Path(__file__).parent.parent / "AppData/meta/current_10.png"), image_10)
+
+        base_image = imread(str(self.parent.file_path))
+        image_50 = circle(base_image, middle_pixel_map, 50, (255, 0, 0), 2)
+        imwrite(str(Path(__file__).parent.parent / "AppData/meta/current_50.png"), image_50)
+
+        base_image = imread(str(self.parent.file_path))
+        image_100 = circle(base_image, middle_pixel_map, 100, (255, 0, 0), 2)
+        imwrite(str(Path(__file__).parent.parent / "AppData/meta/current_100.png"), image_100)
+
+        base_image = imread(str(self.parent.file_path))
+        image_250 = circle(base_image, middle_pixel_map, 250, (255, 0, 0), 2)
+        imwrite(str(Path(__file__).parent.parent / "AppData/meta/current_250.png"), image_250)
+
+        base_image = imread(str(self.parent.file_path))
+        image_500 = circle(base_image, middle_pixel_map, 500, (255, 0, 0), 2)
+        imwrite(str(Path(__file__).parent.parent / "AppData/meta/current_500.png"), image_500)
+
+        self.ids.base_image.reload()
+        self.ids.current_image_10.reload()
+        self.ids.current_image_50.reload()
+        self.ids.current_image_100.reload()
+        self.ids.current_image_250.reload()
+        self.ids.current_image_500.reload()
+
+    def release_back(self):
+        self.parent.transition.direction = 'right'
+        self.parent.current = "file_selector"
+
+    def release_forward(self):
+        try:
+            self.parent.min_radius = int(self.ids.min_radius.text.strip())
+            self.parent.max_radius = int(self.ids.max_radius.text.strip())
+        except ValueError:
+            self.parent.min_radius, self.parent.max_radius = 0, 0
+
+        self.parent.transition.direction = 'left'
+        self.parent.current = "loading_screen"
 
 
 class MainWindow(Screen, BoxLayout, GridLayout, Widget):
@@ -98,11 +179,11 @@ class MainWindow(Screen, BoxLayout, GridLayout, Widget):
 
     def remove_complete_status(self):
 
-        sha256 = self.parent.circle_detector.csv_data_path.stem
+        file_sha256 = self.parent.circle_detector.csv_data_path.stem
         analyzed_file_hashes_path = Path(__file__).parent.parent / "analyzed_file_hashes.txt"
-        if sha256 in self.parent.analyzed_file_hashes:
+        if file_sha256 in self.parent.analyzed_file_hashes:
             with open(analyzed_file_hashes_path, "w") as f:
-                self.parent.analyzed_file_hashes.remove(sha256)
+                self.parent.analyzed_file_hashes.remove(file_sha256)
                 analyzed_file_hashes = [i + "\n" for i in self.parent.analyzed_file_hashes]
 
                 if analyzed_file_hashes:
@@ -194,6 +275,12 @@ class MainWindow(Screen, BoxLayout, GridLayout, Widget):
         self.ids.yes_button.state, self.ids.no_button.state = "normal", "normal"
         self.load_images()
 
+    def press_redo(self):
+        self.ids.redo_image.source = str(Path("AppData/icons/pressed.jpeg"))
+
+    def release_redo(self):
+        self.ids.redo_image.source = "AppData/icons/redo_default.jpeg"
+
     def press_export(self):
         self.ids.export_image.source = "AppData/icons/pressed.jpeg"
 
@@ -214,7 +301,8 @@ class LoadingScreen(Screen):
     def _load_image(self):
 
         self._loading_bar()
-        self.parent.circle_detector = Detector(self.parent.file_path)
+        self.parent.circle_detector = Detector(self.parent.file_path,
+                                               self.parent.min_radius, self.parent.max_radius)
 
         if self.parent.circle_detector.has_circles:
             self.parent.transition.direction = 'left'
@@ -264,6 +352,8 @@ class EmulsionBubbleDetectorApp(App):
         self.complete_status_str = None
         self.analyzed_file_hashes = None
         self.analyzed_file_names = None
+        self.min_radius = None
+        self.max_radius = None
 
         data_path = Path(__file__).parent.parent / "AppData/data"
         if not exists(data_path):
@@ -276,8 +366,14 @@ class EmulsionBubbleDetectorApp(App):
             # TODO update this to create a new image from memory, will cause issues later
             example_image = Path(__file__).parent.parent / "Example/sun.png"
             copy(example_image, meta_path / "zoomed.png")
-            copy(example_image, meta_path / "current.png")
             copy(example_image, meta_path / "detected.png")
+            copy(example_image, meta_path / "current.png")
+            copy(example_image, meta_path / "base_image.png")
+            copy(example_image, meta_path / "current_10.png")
+            copy(example_image, meta_path / "current_50.png")
+            copy(example_image, meta_path / "current_100.png")
+            copy(example_image, meta_path / "current_250.png")
+            copy(example_image, meta_path / "current_500.png")
 
     def build(self):
         self.icon = 'AppData/vcu_png.png'

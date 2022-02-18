@@ -5,6 +5,7 @@ WindowManager:
     MainWindow:
     LoadingScreen:
     FileExporter:
+    PreProcessingScreen:
 
 <FileSelector>:
     name: "file_selector"
@@ -36,6 +37,91 @@ WindowManager:
                 text: "Load"
                 on_release:
                     root.load(file_chooser.selection)
+
+<PreProcessingScreen>:
+    name: "prep_processing_screen"
+    on_enter: root.update_current_image()
+    GridLayout:
+        rows: 4
+        Label:
+            id: file_name
+            size_hint_y: 0.1
+            text: "File Name"
+        GridLayout:
+            padding: 50, 10, 50, 10
+            size_hint_y: 0.2
+            rows: 2
+            TextInput:
+                id: min_radius
+            TextInput:
+                id: max_radius
+            Label:
+                text: "min radius"
+            Label:
+                text: "max radius"
+        GridLayout:
+            cols: 2
+            GridLayout:
+                cols: 6
+                padding: 10, 10, 10, 10
+                GridLayout:
+                    cols: 1
+                    size_hint_x: 0.25
+                    Label:
+                        text: "Base"
+                    Label:
+                        text: "100 pix"
+                GridLayout:
+                    cols: 1
+                    Image:
+                        id: base_image
+                        source: "AppData/meta/base_image.png"
+                    Image:
+                        id: current_image_100
+                        source: "AppData/meta/current_100.png"
+                GridLayout:
+                    cols: 1
+                    size_hint_x: 0.25
+                    Label:
+                        text: "10 pix"
+                    Label:
+                        text: "250 pix"
+                GridLayout:
+                    cols: 1
+                    Image:
+                        id: current_image_10
+                        source: "AppData/meta/current_10.png"
+                    Image:
+                        id: current_image_250
+                        source: "AppData/meta/current_250.png"
+                GridLayout:
+                    cols: 1
+                    size_hint_x: 0.25
+                    Label:
+                        text: "50 pix"
+                    Label:
+                        text: "500 pix"
+                GridLayout:
+                    cols: 1
+                    Image:
+                        id: current_image_50
+                        source: "AppData/meta/current_50.png"
+                    Image:
+                        id: current_image_500
+                        source: "AppData/meta/current_500.png"
+        GridLayout:
+            rows: 1
+            size_hint_y: 0.1
+            Button:
+                text: "Back"
+                on_release:
+                    root.release_back()
+            Button:
+                text: "Forward"
+                background_color: 0, 1, 0, 1
+                on_release:
+                    root.release_forward()
+
 
 <LoadingScreen>:
     name: "loading_screen"
@@ -83,6 +169,21 @@ WindowManager:
                     id: export_image
                     size: (min(root.size)*0.07, min(root.size)*0.07)
                     source: "AppData/icons/export_default.jpeg"
+                    center_x: self.parent.center_x
+                    center_y: self.parent.center_y
+
+            Button:
+                size_hint_x: 0.05
+                background_normal: ""
+                on_press: root.press_redo()
+                on_release:
+                    root.release_redo()
+                    app.root.transition.direction = 'right'
+                    app.root.current = "prep_processing_screen"
+                Image:
+                    id: redo_image
+                    size: (min(root.size)*0.07, min(root.size)*0.07)
+                    source: "AppData/icons/redo_default.jpeg"
                     center_x: self.parent.center_x
                     center_y: self.parent.center_y
 

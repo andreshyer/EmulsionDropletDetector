@@ -20,9 +20,11 @@ conversion = {('3p2', 3.2): 250.0 / 57.0,
 
 class Detector:
 
-    def __init__(self, file_path):
+    def __init__(self, file_path, min_radius=0, max_radius=0):
         # Define original image
         self.file_path = file_path
+        self.min_radius = min_radius
+        self.max_radius = max_radius
         self.original_image = cv2.imread(str(file_path), cv2.IMREAD_COLOR)
 
         # Transform image into grey scale if not already done
@@ -31,8 +33,8 @@ class Detector:
 
         # Grab data in cached csv file. If not cached, create one.
         self.index = None
-        self.csv_data = self._parse_stored_data()
-        if self.csv_data.empty:
+        self.csv_data, perv_min_radius, perv_max_radius = self._parse_stored_data()
+        if self.csv_data.empty or perv_min_radius != self.min_radius or perv_max_radius != self.max_radius:
             self._detect_circles()
 
         # Verify any
@@ -47,6 +49,7 @@ class Detector:
             marked_circles = self.csv_data.loc[self.csv_data['is_circle'] == 'yes']
             for index, row in marked_circles.iterrows():
                 cv2.circle(self.current_image, (row['x'], row['y']), row['r (pixel)'], (255, 0, 0), 2)
+            cv2.imwrite(str(Path(__file__).parent.parent / "AppData/meta/current.png"), self.current_image)
 
             # Init first found of pictures
             self.num_of_circles = len(self.csv_data)
@@ -67,14 +70,15 @@ class Detector:
         working_circle = self.csv_data.iloc[[self.index]].to_dict('records')[0]
         x, y, r = working_circle['x'], working_circle['y'], working_circle['r (pixel)']
 
-        self._get_current_image()
         self._get_detected_image(x, y, r)
         self._get_zoomed_image(x, y, r)
 
         with open(self.index_pointer_file, 'w') as f:
             data = dict(
                 current_index=self.index,
-                file_name=self.file_path.name
+                file_name=self.file_path.name,
+                min_radius=self.min_radius,
+                max_radius=self.max_radius,
             )
             dump(data, f)
 
@@ -150,15 +154,21 @@ class Detector:
         else:
             df = DataFrame(columns=['x', 'y', 'r (pixel)', 'is_circle'])
 
+        min_radius, max_radius = 0, 0
         self.index_pointer_file = Path(__file__).parent.parent / f"AppData/data/{file_sha256}.json"
         if self.index_pointer_file.name in listdir(Path(__file__).parent.parent / "AppData/data"):
             with open(self.index_pointer_file, 'r') as f:
                 data = load(f)
                 self.index = data['current_index'] - 1
+
+                if "min_radius" in data.keys() and "max_radius" in data.keys():
+                    min_radius = data['min_radius']
+                    max_radius = data['max_radius']
+
         else:
             self.index = -1
 
-        return df
+        return df, min_radius, max_radius
 
     def _detect_circles(self):
         # ==============================================================================================================
@@ -173,7 +183,7 @@ class Detector:
                     conv_coef = conversion[key]  # define the multiplication factor from a defined dictionary of values
         # ==============================================================================================================
         circles = cv2.HoughCircles(self.machine_image, cv2.HOUGH_GRADIENT, 1, 20,
-                                   param1=90, param2=40, minRadius=0, maxRadius=0)
+                                   param1=90, param2=40, minRadius=self.min_radius, maxRadius=self.max_radius)
         if circles is not None:
             circles = uint16(around(circles))
             circle_data = []
@@ -191,8 +201,6 @@ class Detector:
             marked_circles = self.csv_data.loc[self.csv_data['is_circle'] == 'yes']
             for index, row in marked_circles.iterrows():
                 cv2.circle(self.current_image, (row['x'], row['y']), row['r (pixel)'], (255, 0, 0), 2)
-
-    def _get_current_image(self):
         cv2.imwrite(str(Path(__file__).parent.parent / "AppData/meta/current.png"), self.current_image)
 
     def _get_detected_image(self, x, y, r):
