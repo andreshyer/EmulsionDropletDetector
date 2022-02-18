@@ -1,0 +1,11 @@
+name: emulsion
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - kivy=2.0.0
+  - pip
+  - pip:
+      - opencv-python
+      - pandas
+      - pywin32
