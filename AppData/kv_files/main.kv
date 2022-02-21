@@ -6,6 +6,7 @@ WindowManager:
     LoadingScreen:
     FileExporter:
     PreProcessingScreen:
+    DirectoryExporter:
 
 <FileSelector>:
     name: "file_selector"
@@ -34,9 +35,46 @@ WindowManager:
                 on_release: root.delete_all_data()
 
             Button:
+                text: "Export All Data"
+                background_color: 0, 0, 1, 1
+                on_release: root.export_all_data()
+
+            Button:
                 text: "Load"
                 on_release:
                     root.load(file_chooser.selection)
+
+<DirectoryExporter>:
+    name: "directory_exporter"
+
+    BoxLayout:
+        size: root.size
+        pos: root.pos
+        orientation: "vertical"
+        padding: 20, 20, 20, 20
+
+        TextInput:
+            id: dir_path
+            size_hint_y: 0.07
+            text: "Data"
+            font_size: 15
+
+        FileChooserListView:
+            id: data_dir_exporter
+            path: root.get_home_path()
+
+        BoxLayout:
+            size_hint_y: None
+            height: 30
+            Button:
+                text: "Back"
+                on_release: root.release_back()
+
+            Button:
+                text: "Export"
+                background_color: 0, 0, 1, 1
+                on_release:
+                    root.export_all_data(data_dir_exporter.path)
 
 <PreProcessingScreen>:
     name: "prep_processing_screen"
@@ -301,12 +339,13 @@ WindowManager:
 
         TextInput:
             id: file_path
-            size_hint_y: 0.05
+            size_hint_y: 0.07
             text: ""
             font_size: 15
 
         FileChooserListView:
             id: file_exporter
+            path: root.get_home_path()
 
         BoxLayout:
             size_hint_y: None
