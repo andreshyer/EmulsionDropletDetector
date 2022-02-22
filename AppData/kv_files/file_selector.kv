@@ -1,0 +1,37 @@
+#: kivy 2.0.0
+
+<FileSelector>:
+    name: "file_selector"
+
+    BoxLayout:
+        size: root.size
+        pos: root.pos
+        orientation: "vertical"
+
+        Label:
+            id: dir_check
+            size_hint_y: 0.05
+            text: "Select Picture File to Identify Circles"
+            font_size: 15
+
+        FileChooserListView:
+            id: file_chooser
+            path: root.get_home_path()
+
+        BoxLayout:
+            size_hint_y: None
+            height: 30
+            Button:
+                text: "Delete All Data"
+                background_color: 1, 0, 0, 1
+                on_release: root.delete_all_data()
+
+            Button:
+                text: "Export All Data"
+                background_color: 0, 0, 1, 1
+                on_release: root.export_all_data()
+
+            Button:
+                text: "Load"
+                on_release:
+                    root.load(file_chooser.selection)
