@@ -43,6 +43,7 @@ class EmulsionBubbleDetectorApp(App):
         if not exists(meta_path):
             mkdir(meta_path)
 
+            # Create blank images
             base_image = zeros((255, 255))
             dummy_images = [
                 "zoomed.png",
@@ -59,7 +60,6 @@ class EmulsionBubbleDetectorApp(App):
                 imwrite(str(meta_path / dummy_image), base_image)
 
     def build(self):
-        self.icon = 'AppData/vcu_png.png'
-        builder_file = Path(__file__).parent.parent / 'AppData/kv_files/main.kv'
+        builder_file = Path(__file__).parent.parent / f'AppData/kv_files/window_manager.kv'
         kv = Builder.load_file(str(builder_file))
         return kv

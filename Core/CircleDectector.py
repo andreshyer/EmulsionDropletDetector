@@ -28,8 +28,8 @@ class Detector:
         self.original_image = cv2.imread(str(file_path), cv2.IMREAD_COLOR)
 
         # Transform image into grey scale if not already done
-        self.machine_image = cv2.GaussianBlur(self.original_image, (0, 0), cv2.BORDER_DEFAULT)
-        self.machine_image = cv2.cvtColor(self.original_image, cv2.COLOR_RGB2GRAY)
+        self.machine_image = cv2.blur(self.original_image, (3, 3))
+        self.machine_image = cv2.cvtColor(self.machine_image, cv2.COLOR_RGB2GRAY)
 
         # Grab data in cached csv file. If not cached, create one.
         self.index = None

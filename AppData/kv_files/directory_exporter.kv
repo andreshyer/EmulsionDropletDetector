@@ -1,0 +1,33 @@
+#: kivy 2.0.0
+
+<DirectoryExporter>:
+    name: "directory_exporter"
+
+    BoxLayout:
+        size: root.size
+        pos: root.pos
+        orientation: "vertical"
+        padding: 20, 20, 20, 20
+
+        TextInput:
+            id: dir_path
+            size_hint_y: 0.07
+            text: "Data"
+            font_size: 15
+
+        FileChooserListView:
+            id: data_dir_exporter
+            path: root.get_home_path()
+
+        BoxLayout:
+            size_hint_y: None
+            height: 30
+            Button:
+                text: "Back"
+                on_release: root.release_back()
+
+            Button:
+                text: "Export"
+                background_color: 0, 0, 1, 1
+                on_release:
+                    root.export_all_data(data_dir_exporter.path)

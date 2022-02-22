@@ -150,4 +150,4 @@ class MainWindow(Screen, BoxLayout, GridLayout, Widget):
     def release_export(self):
         self.ids.export_image.source = "AppData/icons/export_default.jpeg"
         self.parent.transition.direction = 'left'
-        self.parent.current = "file_exporter"
+        self.parent.current = "file_exporter.kv"
