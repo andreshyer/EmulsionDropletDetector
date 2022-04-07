@@ -37,7 +37,10 @@
                 size_hint_x: 0.05
                 background_normal: ""
                 on_press: root.press_export()
-                on_release: root.release_export()
+                on_release:
+                    root.release_export()
+                    app.root.transition.direction = 'left'
+                    app.root.current = "file_exporter"
                 Image:
                     id: export_image
                     size: (min(root.size)*0.07, min(root.size)*0.07)
