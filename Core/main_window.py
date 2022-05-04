@@ -109,7 +109,7 @@ class MainWindow(Screen, BoxLayout, GridLayout, Widget):
 
     def press_yes(self):
         self.parent.circle_detector.update_choice(choice='yes')
-        yes_button_state, no_button_state = self.parent.circle_detector.fetch_next_circle(forward=True)
+        yes_button_state, no_button_state = self.parent.circle_detector.fetch_next_circle(forward=True, yes=True)
         self.ids.yes_button.state, self.ids.no_button.state = yes_button_state, no_button_state
         self.load_images()
 

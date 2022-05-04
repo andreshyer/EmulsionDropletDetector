@@ -9,6 +9,8 @@ from numpy import uint16, around
 from pandas import DataFrame, read_csv
 import re
 
+from .CircleGrouper import group_circles
+
 
 conversion = {('3p2', 3.2): 250.0 / 57.0,
               ('6p3', 6.3): 250.0 / 112.0,
@@ -20,11 +22,12 @@ conversion = {('3p2', 3.2): 250.0 / 57.0,
 
 class Detector:
 
-    def __init__(self, file_path, min_radius=0, max_radius=0):
+    def __init__(self, file_path, min_radius=0, max_radius=0, cian_threshold=1):
         # Define original image
         self.file_path = file_path
         self.min_radius = min_radius
         self.max_radius = max_radius
+        self.cian_threshold = cian_threshold
         self.original_image = cv2.imread(str(file_path), cv2.IMREAD_COLOR)
 
         # Transform image into grey scale if not already done
@@ -33,8 +36,8 @@ class Detector:
 
         # Grab data in cached csv file. If not cached, create one.
         self.index = None
-        self.csv_data, perv_min_radius, perv_max_radius = self._parse_stored_data()
-        if self.csv_data.empty or perv_min_radius != self.min_radius or perv_max_radius != self.max_radius:
+        self.csv_data, perv_min_radius, perv_max_radius, prev_cian_threshold = self._parse_stored_data()
+        if self.csv_data.empty or perv_min_radius != self.min_radius or perv_max_radius != self.max_radius or prev_cian_threshold != self.cian_threshold:
             self._detect_circles()
 
         # Verify any
@@ -55,19 +58,33 @@ class Detector:
             self.num_of_circles = len(self.csv_data)
             self.fetch_next_circle()
 
-    def fetch_next_circle(self, forward=True):
+    def fetch_next_circle(self, forward=True, yes=False):
 
         # Update the index
         if forward:
-            self.index += 1
-            if self.index >= self.num_of_circles:
-                self.index = 0
+            if yes:
+                current_group = self.csv_data.loc[[self.index]].to_dict('records')[0]["group"]
+                while True:
+                    self.index += 1
+                    if self.index >= self.num_of_circles:
+                        self.index = 0
+                        break
+                    else:
+                        working_group = self.csv_data.loc[[self.index]].to_dict('records')[0]["group"]
+                        if current_group != working_group:
+                            break
+                        else:
+                            self.csv_data.at[self.index, 'is_circle'] = 'yes'
+            else:
+                self.index += 1
+                if self.index >= self.num_of_circles:
+                    self.index = 0
         if not forward:
             self.index -= 1
             if self.index <= -1:
                 self.index = self.num_of_circles - 1
 
-        working_circle = self.csv_data.iloc[[self.index]].to_dict('records')[0]
+        working_circle = self.csv_data.loc[[self.index]].to_dict('records')[0]
         x, y, r = working_circle['x'], working_circle['y'], working_circle['r (pixel)']
 
         self._get_detected_image(x, y, r)
@@ -79,6 +96,7 @@ class Detector:
                 file_name=self.file_path.name,
                 min_radius=self.min_radius,
                 max_radius=self.max_radius,
+                cian_threshold=self.cian_threshold,
             )
             dump(data, f)
 
@@ -154,7 +172,7 @@ class Detector:
         else:
             df = DataFrame(columns=['x', 'y', 'r (pixel)', 'is_circle'])
 
-        min_radius, max_radius = 0, 0
+        min_radius, max_radius, cian_threshold = 0, 0, 0.85
         self.index_pointer_file = Path(__file__).parent.parent / f"AppData/data/{file_sha256}.json"
         if self.index_pointer_file.name in listdir(Path(__file__).parent.parent / "AppData/data"):
             with open(self.index_pointer_file, 'r') as f:
@@ -165,10 +183,13 @@ class Detector:
                     min_radius = data['min_radius']
                     max_radius = data['max_radius']
 
+                if "cian_threshold" in data.keys():
+                    cian_threshold = data["cian_threshold"]
+
         else:
             self.index = -1
 
-        return df, min_radius, max_radius
+        return df, min_radius, max_radius, cian_threshold
 
     def _detect_circles(self):
         # ==============================================================================================================
@@ -189,8 +210,11 @@ class Detector:
             circle_data = []
             for i in circles[0, :]:
                 x, y, r = i[0], i[1], i[2]
-                circle_data.append({'x': x, 'y': y, 'r (pixel)': r, 'is_circle': 'unmarked', 'r (um)': conv_coef * r})
+                circle_data.append({'x': x, 'y': y, 'r': r, 'is_circle': 'unmarked', 'r (um)': conv_coef * r})
             self.csv_data = DataFrame(circle_data)
+            self.csv_data = group_circles(self.csv_data, cian_threshold=0.85)
+            self.csv_data = self.csv_data.rename(columns={"r": "r (pixel)"})
+            self.csv_data = self.csv_data.reset_index(drop=True)
             self.csv_data.to_csv(self.csv_data_path, index=False)
 
     def _update_current_image(self, x=None, y=None, r=None, add_circle=True):
@@ -246,3 +270,4 @@ class Detector:
 
         self.fetch_next_circle(forward=False)
         return self.fetch_next_circle(forward=True)
+

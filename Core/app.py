@@ -4,6 +4,7 @@ from os.path import exists
 
 from cv2 import imwrite
 from numpy import zeros
+from pandas import read_csv
 from kivy import require
 from kivy.app import App
 from kivy.lang.builder import Builder
@@ -30,6 +31,7 @@ class EmulsionBubbleDetectorApp(App):
         self.analyzed_file_names = None
         self.min_radius = None
         self.max_radius = None
+        self.cian_threshold = None
 
         # Make sure data and meta-data directories exist, if not make them
         data_path = Path(__file__).parent.parent / "AppData/data"
@@ -58,6 +60,21 @@ class EmulsionBubbleDetectorApp(App):
             ]
             for dummy_image in dummy_images:
                 imwrite(str(meta_path / dummy_image), base_image)
+
+        # Gather which files have been fully analyzed, fix broken hash file
+        file_hashes = []
+        for file in data_path.iterdir():
+            if file.suffix == ".csv":
+                df = read_csv(file)
+                df = df.loc[df["is_circle"] == "unmarked"]
+                if df.empty:
+                    file_hashes.append(file.stem)
+
+        # Re-build analyzed_file_hashes.txt with updated data
+        analyzed_file_hashes_path = Path(__file__).parent.parent / "analyzed_file_hashes.txt"
+        with open(analyzed_file_hashes_path, "w") as f:
+            for file_hash in file_hashes:
+                f.write(f"{file_hash}\n")
 
     def build(self):
         builder_file = Path(__file__).parent.parent / f'AppData/kv_files/window_manager.kv'

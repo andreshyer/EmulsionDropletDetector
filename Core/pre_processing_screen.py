@@ -19,7 +19,7 @@ class PreProcessingScreen(Screen):
             file_sha256 = sha256(f.read()).hexdigest()
 
         # If json data exists for file, grab min and max radii
-        min_radius, max_radius = 0, 0
+        min_radius, max_radius, cian_threshold = 0, 0, 0.85
         data_folder_path = Path(__file__).parent.parent / "AppData/data"
         opened_files = list(set([file.stem for file in data_folder_path.iterdir()]))
         if file_sha256 in opened_files:
@@ -27,6 +27,8 @@ class PreProcessingScreen(Screen):
                 data = load(f)
                 if "min_radius" in data.keys() and "max_radius" in data.keys():
                     min_radius, max_radius = data["min_radius"], data["max_radius"]
+                if "cian_threshold" in data.keys():
+                    cian_threshold = data["cian_threshold"]
 
         # Check if image has been analyzed
         complete_status = "(Not Complete)"
@@ -42,6 +44,7 @@ class PreProcessingScreen(Screen):
         self.ids.file_name.text = f"{self.parent.file_path.name} {complete_status}"
         self.ids.min_radius.text = str(min_radius)
         self.ids.max_radius.text = str(max_radius)
+        self.ids.cian_threshold.text = str(cian_threshold)
 
         # Gather information from original image
         base_image = imread(str(self.parent.file_path))
@@ -72,8 +75,9 @@ class PreProcessingScreen(Screen):
         try:
             self.parent.min_radius = int(self.ids.min_radius.text.strip())
             self.parent.max_radius = int(self.ids.max_radius.text.strip())
+            self.parent.cian_threshold = float(self.ids.cian_threshold.text.strip())
         except ValueError:
-            self.parent.min_radius, self.parent.max_radius = 0, 0
+            self.parent.min_radius, self.parent.max_radius, self.parent.cian_threshold = 0, 0, 1
 
         self.parent.transition.direction = 'left'
         self.parent.current = "loading_screen"
