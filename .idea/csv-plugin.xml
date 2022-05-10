@@ -3,13 +3,6 @@
   <component name="CsvFileAttributes">
     <option name="attributeMap">
       <map>
-        <entry key="/AppData/data/0ae5c4208f805f63ed42c59d709626d98bc2d4e3dfef74b365eb72ec162f1591.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
         <entry key="/AppData/data/0b286aa569c845ce8aade02b339037a907e30bd429d8d5ebc1a390e9bb6f504f.csv">
           <value>
             <Attribute>
@@ -25,6 +18,13 @@
           </value>
         </entry>
         <entry key="/AppData/data/d41eeca7b299b40b17dcf07a3b3adb6f61fb85f1f1c4fe0f6bb05e71ae826146.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/dev.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />

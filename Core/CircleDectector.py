@@ -74,7 +74,7 @@ class Detector:
                         if current_group != working_group:
                             break
                         else:
-                            self.csv_data.at[self.index, 'is_circle'] = 'yes'
+                            self.csv_data.at[self.index, 'is_circle'] = 'no'
             else:
                 self.index += 1
                 if self.index >= self.num_of_circles:
@@ -212,7 +212,7 @@ class Detector:
                 x, y, r = i[0], i[1], i[2]
                 circle_data.append({'x': x, 'y': y, 'r': r, 'is_circle': 'unmarked', 'r (um)': conv_coef * r})
             self.csv_data = DataFrame(circle_data)
-            self.csv_data = group_circles(self.csv_data, cian_threshold=0.85)
+            self.csv_data = group_circles(self.csv_data, cian_threshold=self.cian_threshold)
             self.csv_data = self.csv_data.rename(columns={"r": "r (pixel)"})
             self.csv_data = self.csv_data.reset_index(drop=True)
             self.csv_data.to_csv(self.csv_data_path, index=False)

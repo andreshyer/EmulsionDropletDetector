@@ -63,7 +63,6 @@ def cian_of_df(a, b_df, threshold):
         b_df["common_area_norm"] = b_df["common_area"] / (pi * b_df[["a_r^2", "b_r^2"]].max(axis=1))
 
         # Get circles that are above the given threshold
-        b_df.to_csv('dev.csv')
         above_threshold_index = b_df.loc[b_df["common_area_norm"] >= threshold].index.tolist()
 
     above_threshold_index.extend(complete_overlap_indexes)
