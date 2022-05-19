@@ -196,7 +196,7 @@ class Detector:
         # make the r(um) equal to the r(pix) initially using a conversion factor = 1
         conv_coef = 1
         # regex search the path name to find the magnification information
-        file_re = re.search('(fb(\d)_(\d+)I_([A-Z]+)_([A-Z]+)_([0-9p]{3})_([A-Z]+)_([0-9p]{3})*c*_([0-9p]{1,4})v_*\d*_([0-9a-zA-Z\-]{1,6})_*\d*)', str(self.file_path))
+        file_re = re.search('(fb([\w-]+)_(\d+)I_([A-Z]+)_([A-Z]+)_([0-9p]{3})_([A-Z]+)_([0-9p]{3})*c*_([0-9p]{1,4})v_*\d*_([0-9a-zA-Z\-]{1,6})_*\d*)', str(self.file_path))
         if file_re:  # if the file name matches the regex search
             mag = file_re.group(10)  # get the magnification value
             for key in conversion.keys():  # go through the keys to check what conversion factor to use
