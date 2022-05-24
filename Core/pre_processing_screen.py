@@ -3,6 +3,7 @@ from hashlib import sha256
 from json import load
 from os.path import exists
 
+from numpy import nan
 from cv2 import imread, imwrite, circle
 from kivy.uix.screenmanager import Screen
 
@@ -19,16 +20,23 @@ class PreProcessingScreen(Screen):
             file_sha256 = sha256(f.read()).hexdigest()
 
         # If json data exists for file, grab min and max radii
-        min_radius, max_radius, cian_threshold = 0, 0, 0.85
+        min_radius, max_radius, max_diff_rad, max_dist = 0, 0, 0.05, 0.50
         data_folder_path = Path(__file__).parent.parent / "AppData/data"
         opened_files = list(set([file.stem for file in data_folder_path.iterdir()]))
         if file_sha256 in opened_files:
             with open(Path(__file__).parent.parent / f"AppData/data/{file_sha256}.json", "r") as f:
                 data = load(f)
-                if "min_radius" in data.keys() and "max_radius" in data.keys():
-                    min_radius, max_radius = data["min_radius"], data["max_radius"]
-                if "cian_threshold" in data.keys():
-                    cian_threshold = data["cian_threshold"]
+                if "min_radius" in data.keys():
+                    min_radius = data['min_radius']
+
+                if "max_radius" in data.keys():
+                    max_radius = data['max_radius']
+
+                if "max_diff_rad" in data.keys():
+                    max_diff_rad = data["max_diff_rad"]
+
+                if "max_dist" in data.keys():
+                    max_dist = data["max_dist"]
 
         # Check if image has been analyzed
         complete_status = "(Not Complete)"
@@ -44,7 +52,8 @@ class PreProcessingScreen(Screen):
         self.ids.file_name.text = f"{self.parent.file_path.name} {complete_status}"
         self.ids.min_radius.text = str(min_radius)
         self.ids.max_radius.text = str(max_radius)
-        self.ids.cian_threshold.text = str(cian_threshold)
+        self.ids.max_diff_rad.text = str(max_diff_rad)
+        self.ids.max_dist.text = str(max_dist)
 
         # Gather information from original image
         base_image = imread(str(self.parent.file_path))
@@ -72,12 +81,10 @@ class PreProcessingScreen(Screen):
         self.parent.current = "file_selector"
 
     def release_forward(self):
-        try:
-            self.parent.min_radius = int(self.ids.min_radius.text.strip())
-            self.parent.max_radius = int(self.ids.max_radius.text.strip())
-            self.parent.cian_threshold = float(self.ids.cian_threshold.text.strip())
-        except ValueError:
-            self.parent.min_radius, self.parent.max_radius, self.parent.cian_threshold = 0, 0, 1
+        self.parent.min_radius = int(self.ids.min_radius.text.strip())
+        self.parent.max_radius = int(self.ids.max_radius.text.strip())
+        self.parent.max_diff_rad = float(self.ids.max_diff_rad.text.strip())
+        self.parent.max_dist = float(self.ids.max_dist.text.strip())
 
         self.parent.transition.direction = 'left'
         self.parent.current = "loading_screen"

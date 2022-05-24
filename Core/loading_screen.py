@@ -23,7 +23,8 @@ class LoadingScreen(Screen):
         self.parent.circle_detector = Detector(self.parent.file_path,
                                                self.parent.min_radius,
                                                self.parent.max_radius,
-                                               self.parent.cian_threshold)
+                                               self.parent.max_diff_rad,
+                                               self.parent.max_dist)
 
         if self.parent.circle_detector.has_circles:
             self.parent.transition.direction = 'left'

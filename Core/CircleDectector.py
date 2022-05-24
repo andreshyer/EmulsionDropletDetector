@@ -5,7 +5,7 @@ from hashlib import sha256
 from json import load, dump
 
 import cv2
-from numpy import uint16, around
+from numpy import uint16, around, nan
 from pandas import DataFrame, read_csv
 import re
 
@@ -22,12 +22,14 @@ conversion = {('3p2', 3.2): 250.0 / 57.0,
 
 class Detector:
 
-    def __init__(self, file_path, min_radius=0, max_radius=0, cian_threshold=1):
+    def __init__(self, file_path, min_radius=0, max_radius=0, max_diff_rad: float = 0.05, max_dist: float = 0.5):
+
         # Define original image
         self.file_path = file_path
         self.min_radius = min_radius
         self.max_radius = max_radius
-        self.cian_threshold = cian_threshold
+        self.max_diff_rad = max_diff_rad
+        self.max_dist = max_dist
         self.original_image = cv2.imread(str(file_path), cv2.IMREAD_COLOR)
 
         # Transform image into grey scale if not already done
@@ -36,8 +38,16 @@ class Detector:
 
         # Grab data in cached csv file. If not cached, create one.
         self.index = None
-        self.csv_data, perv_min_radius, perv_max_radius, prev_cian_threshold = self._parse_stored_data()
-        if self.csv_data.empty or perv_min_radius != self.min_radius or perv_max_radius != self.max_radius or prev_cian_threshold != self.cian_threshold:
+        self.csv_data, perv_min_radius, perv_max_radius, prev_max_diff_rad, prev_max_dist = self._parse_stored_data()
+        if self.csv_data.empty:
+            self._detect_circles()
+        elif perv_min_radius != self.min_radius:
+            self._detect_circles()
+        elif perv_max_radius != self.max_radius:
+            self._detect_circles()
+        elif prev_max_diff_rad != self.max_diff_rad:
+            self._detect_circles()
+        elif prev_max_dist != self.max_dist:
             self._detect_circles()
 
         # Verify any
@@ -96,7 +106,8 @@ class Detector:
                 file_name=self.file_path.name,
                 min_radius=self.min_radius,
                 max_radius=self.max_radius,
-                cian_threshold=self.cian_threshold,
+                max_diff_rad=self.max_diff_rad,
+                max_dist=self.max_dist,
             )
             dump(data, f)
 
@@ -172,24 +183,29 @@ class Detector:
         else:
             df = DataFrame(columns=['x', 'y', 'r (pixel)', 'is_circle'])
 
-        min_radius, max_radius, cian_threshold = 0, 0, 0.85
+        min_radius, max_radius, max_diff_rad, max_dist = nan, nan, nan, nan
         self.index_pointer_file = Path(__file__).parent.parent / f"AppData/data/{file_sha256}.json"
         if self.index_pointer_file.name in listdir(Path(__file__).parent.parent / "AppData/data"):
             with open(self.index_pointer_file, 'r') as f:
                 data = load(f)
                 self.index = data['current_index'] - 1
 
-                if "min_radius" in data.keys() and "max_radius" in data.keys():
+                if "min_radius" in data.keys():
                     min_radius = data['min_radius']
+
+                if "max_radius" in data.keys():
                     max_radius = data['max_radius']
 
-                if "cian_threshold" in data.keys():
-                    cian_threshold = data["cian_threshold"]
+                if "max_diff_rad" in data.keys():
+                    max_diff_rad = data["max_diff_rad"]
+
+                if "max_dist" in data.keys():
+                    max_dist = data["max_dist"]
 
         else:
             self.index = -1
 
-        return df, min_radius, max_radius, cian_threshold
+        return df, min_radius, max_radius, max_diff_rad, max_dist
 
     def _detect_circles(self):
         # ==============================================================================================================
@@ -203,6 +219,7 @@ class Detector:
                 if mag in key:
                     conv_coef = conversion[key]  # define the multiplication factor from a defined dictionary of values
         # ==============================================================================================================
+
         circles = cv2.HoughCircles(self.machine_image, cv2.HOUGH_GRADIENT, 1, 20,
                                    param1=90, param2=40, minRadius=self.min_radius, maxRadius=self.max_radius)
         if circles is not None:
@@ -212,10 +229,12 @@ class Detector:
                 x, y, r = i[0], i[1], i[2]
                 circle_data.append({'x': x, 'y': y, 'r': r, 'is_circle': 'unmarked', 'r (um)': conv_coef * r})
             self.csv_data = DataFrame(circle_data)
-            self.csv_data = group_circles(self.csv_data, cian_threshold=self.cian_threshold)
+            self.csv_data = group_circles(self.csv_data, max_diff_rad=self.max_diff_rad, max_dist=self.max_dist)
             self.csv_data = self.csv_data.rename(columns={"r": "r (pixel)"})
             self.csv_data = self.csv_data.reset_index(drop=True)
             self.csv_data.to_csv(self.csv_data_path, index=False)
+
+        self.index = -1
 
     def _update_current_image(self, x=None, y=None, r=None, add_circle=True):
         if add_circle:

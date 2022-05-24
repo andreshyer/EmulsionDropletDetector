@@ -11,7 +11,7 @@ class MainWindow(Screen, BoxLayout, GridLayout, Widget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def check_complete_status(self):
+    def check_complete_status(self, force_remove=False):
 
         # If all circles have been marked
         circles_left = self.parent.circle_detector.csv_data
@@ -38,6 +38,10 @@ class MainWindow(Screen, BoxLayout, GridLayout, Widget):
 
             return "Completed"
 
+        else:
+            if force_remove:
+                self.remove_complete_status()
+
         return "Not Complete"
 
     def remove_complete_status(self):
@@ -59,14 +63,11 @@ class MainWindow(Screen, BoxLayout, GridLayout, Widget):
 
         # Check if image has already been analyzed
 
-        sha256 = self.parent.circle_detector.csv_data_path.stem
         analyzed_file_hashes_path = Path(__file__).parent.parent / "analyzed_file_hashes.txt"
         with open(analyzed_file_hashes_path, "r") as f:
             self.parent.analyzed_file_hashes = set(f.read().splitlines())
 
-        self.parent.complete_status_str = "Not Complete"
-        if sha256 in self.parent.analyzed_file_hashes:
-            self.parent.complete_status_str = "Completed"
+        self.parent.complete_status_str = self.check_complete_status(force_remove=True)
 
         self.ids.yes_button.state, self.ids.no_button.state = "normal", "normal"
 

@@ -11,20 +11,28 @@
             text: "File Name"
         GridLayout:
             padding: 50, 10, 50, 10
-            size_hint_y: 0.2
-            rows: 2
+            size_hint_y: 0.45
+            rows: 5
             TextInput:
                 id: min_radius
             TextInput:
                 id: max_radius
+            Label:
+                text: "Min Radius"
+            Label:
+                text: "Max Radius"
             TextInput:
-                id: cian_threshold
+                id: max_diff_rad
+            TextInput:
+                id: max_dist
             Label:
-                text: "min radius"
+                text: "Max Difference of Radii [grouping]"
             Label:
-                text: "max radius"
+                text: "Max Relative Distance [grouping]"
             Label:
-                text: "CIAN"
+                text: "(Recommended: 0-1)"
+            Label:
+                text: "(Recommended: 0-1)"
         GridLayout:
             cols: 2
             GridLayout:

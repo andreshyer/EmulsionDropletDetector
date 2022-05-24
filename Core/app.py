@@ -31,7 +31,8 @@ class EmulsionBubbleDetectorApp(App):
         self.analyzed_file_names = None
         self.min_radius = None
         self.max_radius = None
-        self.cian_threshold = None
+        self.max_diff_rad = None
+        self.max_dist = None
 
         # Make sure data and meta-data directories exist, if not make them
         data_path = Path(__file__).parent.parent / "AppData/data"
